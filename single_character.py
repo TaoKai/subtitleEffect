@@ -229,12 +229,12 @@ class SubtitleAdvertise(object):
         if sa_cnt%img_cnt == 0:
             intv = int(sa_cnt/img_cnt)
         else:
-            intv = int(sa_cnt/img_cnt+1)
+            intv = int(sa_cnt/img_cnt)
         img_ind = 0
         image = images[img_ind]
         frames = []
         for i, sa in enumerate(self.subAnims):
-            if i>0 and i%intv==0 and img_ind<img_cnt:
+            if i>0 and i%intv==0 and img_ind<img_cnt-1:
                 img_ind += 1
                 image = images[img_ind]
             frames += sa.make_combination01(image)
@@ -243,9 +243,11 @@ class SubtitleAdvertise(object):
 if __name__=='__main__':
     image1 = cv2.imread('test.png', cv2.IMREAD_COLOR)
     image2 = cv2.imread('test1.png', cv2.IMREAD_COLOR)
+    image3 = cv2.imread('test2.png', cv2.IMREAD_COLOR)
     lines = ['因为牛郎和织女一直处于分居状态', '牛郎和他的牛好上了', '所以七夕节不过了', '请大家相互转告']
     sadv = SubtitleAdvertise(lines)
-    frames = sadv.make_advertisement([image1,image2])
+    frames = sadv.make_advertisement([image1,image2,image3])
     for img in frames:
         cv2.imshow('', img)
         cv2.waitKey(int(1000/30))
+    saveVideo('tmp.mp4', frames, 30)

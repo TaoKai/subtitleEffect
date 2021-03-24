@@ -207,17 +207,18 @@ class SubAnimation(object):
     
     def make_combination01(self, image):
         frames = self.make_pause_animation_with_image(image, has_character=False)
+        start_index = len(frames)
         frames += self.make_scale_animation_with_image(image)
         frames += self.make_pause_animation_with_image(frames[-1])
         frames += self.make_fade_animation_with_image(image)
         frames += self.make_pause_animation_with_image(image, has_character=False)
-        return frames
+        return frames, start_index
 
 class SubtitleAdvertise(object):
     def __init__(self, lines):
         self.subAnims = []
         for l in lines:
-            sa = SubAnimation(l, 60)
+            sa = SubAnimation(l, 80)
             self.subAnims.append(sa)
     
     def make_advertisement(self, images):
@@ -229,24 +230,41 @@ class SubtitleAdvertise(object):
         if sa_cnt%img_cnt == 0:
             intv = int(sa_cnt/img_cnt)
         else:
-            intv = int(sa_cnt/img_cnt)
+            intv = int(sa_cnt/img_cnt+1)
         img_ind = 0
         image = images[img_ind]
         frames = []
+        frame_indices = []
         for i, sa in enumerate(self.subAnims):
             if i>0 and i%intv==0 and img_ind<img_cnt-1:
                 img_ind += 1
                 image = images[img_ind]
-            frames += sa.make_combination01(image)
-        return frames
+            paraframes, paraindex = sa.make_combination01(image)
+            paraindex += len(frames)
+            frames += paraframes
+            frame_indices.append(paraindex)
+        return frames, frame_indices
+
+def convert2millisecond(frame_indices, fps=30):
+    millis = [int(fi*1000/fps) for fi in frame_indices]
+    return millis
+
+def generate_advertisement(lines, img_paths):
+    images = [cv2.imread(p, cv2.IMREAD_COLOR) for p in img_paths]
+    sadv = SubtitleAdvertise(lines)
+    frames, frame_indices = sadv.make_advertisement(images)
+    millis = convert2millisecond(frame_indices)
+    lines_delay = []
+    for l, m in zip(lines, millis):
+        lines_delay.append((l, m))
+    return frames, lines_delay
 
 if __name__=='__main__':
-    image1 = cv2.imread('test.png', cv2.IMREAD_COLOR)
-    image2 = cv2.imread('test1.png', cv2.IMREAD_COLOR)
-    image3 = cv2.imread('test2.png', cv2.IMREAD_COLOR)
-    lines = ['因为牛郎和织女一直处于分居状态', '牛郎和他的牛好上了', '所以七夕节不过了', '请大家相互转告']
-    sadv = SubtitleAdvertise(lines)
-    frames = sadv.make_advertisement([image1,image2,image3])
+    paths = ['test.png','test1.png','test2.png','test3.png']
+    lines = ['因为牛郎和织女一直处于分居状态', '牛郎和他的牛好上了', '所以七夕节不过了', '请大家相互转告', '如果还想过的话', '就请集齐七颗龙珠', '这样就可以召唤神龙了']
+    frames, lines_delay = generate_advertisement(lines, paths)
+    for l, m in lines_delay:
+        print(l, m)
     for img in frames:
         cv2.imshow('', img)
         cv2.waitKey(int(1000/30))

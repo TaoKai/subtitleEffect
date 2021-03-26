@@ -154,24 +154,19 @@ class SubAnimation(object):
             font_size = 14
         self.font_size = font_size
         self.para_string = para_string
-        self.scale_ratio = 3.0
         self.scale_frame_cnt = 5
-        self.start_alpha = 1.0
-        self.end_alpha = 0.0
         self.fade_frame_cnt = 5
         self.p_len = len(self.para_string)
         self.pause_per_character_frame_cnt = 5
         self.pause_no_character_frame_cnt = 5
-        self.start_margin = 0
-        self.end_margin = 40
     
-    def make_margin_and_fade_animation_with_image(self, image):
+    def make_margin_and_fade_animation_with_image(self, image, margin_range=(0,0), alpha_range=(1.0,0.0)):
         h, w, _ = image.shape
         position = (w/2, h/2+80)
-        alpha = self.start_alpha
-        intv_alpha = (self.start_alpha-self.end_alpha)/self.fade_frame_cnt
-        margin = self.start_margin
-        intv_margin = (self.start_margin-self.end_margin)/self.fade_frame_cnt
+        alpha = alpha_range[0]
+        intv_alpha = (alpha_range[0]-alpha_range[1])/self.fade_frame_cnt
+        margin = margin_range[0]
+        intv_margin = (margin_range[0]-margin_range[1])/self.fade_frame_cnt
         frames = []
         for i in range(self.fade_frame_cnt):
             am = ArrayMultiline(self.para_string, self.font_size, alpha=alpha, margin=margin)
@@ -180,16 +175,16 @@ class SubAnimation(object):
             margin -= intv_margin
             frames.append(img)
             print('make_margin_and_fade_animation_with_image', i)
-        am = ArrayMultiline(self.para_string, self.font_size, alpha=self.end_alpha, margin=self.end_margin)
+        am = ArrayMultiline(self.para_string, self.font_size, alpha=alpha_range[1], margin=margin_range[1])
         img = am.draw_on_image(image, position)
         frames.append(img)
         return frames
 
-    def make_fade_animation_with_image(self, image):
+    def make_fade_animation_with_image(self, image, alpha_range=(1.0,0.0)):
         h, w, _ = image.shape
         position = (w/2, h/2+80)
-        alpha = self.start_alpha
-        intv = (self.start_alpha-self.end_alpha)/self.fade_frame_cnt
+        alpha = alpha_range[0]
+        intv = (alpha_range[0]-alpha_range[1])/self.fade_frame_cnt
         frames = []
         for i in range(self.fade_frame_cnt):
             am = ArrayMultiline(self.para_string, self.font_size, alpha=alpha)
@@ -197,7 +192,7 @@ class SubAnimation(object):
             alpha -= intv
             frames.append(img)
             print('make_fade_animation_with_image', i)
-        am = ArrayMultiline(self.para_string, self.font_size, alpha=self.end_alpha)
+        am = ArrayMultiline(self.para_string, self.font_size, alpha=alpha_range[1])
         img = am.draw_on_image(image, position)
         frames.append(img)
         return frames
@@ -213,11 +208,11 @@ class SubAnimation(object):
             print('make_pause_animation_with_image', i, has_character)
         return frames
 
-    def make_scale_animation_with_image(self, image):
+    def make_scale_animation_with_image(self, image, scale_ratio=3.0):
         orig_img = image.copy()
         h, w, _ = orig_img.shape
         position = (w/2, h/2+80)
-        start_size = int(self.font_size*self.scale_ratio)
+        start_size = int(self.font_size*scale_ratio)
         intv = (start_size-self.font_size)/self.scale_frame_cnt
         frames = []
         for i in range(self.scale_frame_cnt):
@@ -234,18 +229,18 @@ class SubAnimation(object):
     def make_combination01(self, image):
         frames = self.make_pause_animation_with_image(image, has_character=False)
         start_index = len(frames)
-        frames += self.make_scale_animation_with_image(image)
+        frames += self.make_scale_animation_with_image(image, scale_ratio=3.0)
         frames += self.make_pause_animation_with_image(frames[-1])
-        frames += self.make_fade_animation_with_image(image)
+        frames += self.make_fade_animation_with_image(image, alpha_range=(1.0, 0.0))
         frames += self.make_pause_animation_with_image(image, has_character=False)
         return frames, start_index
     
     def make_combination02(self, image):
         frames = self.make_pause_animation_with_image(image, has_character=False)
         start_index = len(frames)
-        frames += self.make_scale_animation_with_image(image)
+        frames += self.make_scale_animation_with_image(image, scale_ratio=3.0)
         frames += self.make_pause_animation_with_image(frames[-1])
-        frames += self.make_margin_and_fade_animation_with_image(image)
+        frames += self.make_margin_and_fade_animation_with_image(image, margin_range=(0, 40), alpha_range=(1.0, 0.0))
         frames += self.make_pause_animation_with_image(image, has_character=False)
         return frames, start_index
 

@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from moviepy.editor import VideoFileClip
 from six import string_types, iteritems
 from PIL import Image, ImageDraw, ImageFont
 from single_character import SubAnimation, ArrayMultiline, saveVideo
@@ -27,16 +28,37 @@ class GIFPIC(object):
         self.gif_frames = self.get_gif_frames()
         self.gif_len = len(self.gif_frames)
     
+    def remap_partial_gif(self, raw_map, box):
+        b = np.array(box, dtype=np.int32)
+        zmap = np.zeros(raw_map.shape, dtype=np.uint8)
+        zmap[b[1]:b[3], b[0]:b[2]] = raw_map[b[1]:b[3], b[0]:b[2]]
+        return zmap
+
     def get_gif_frames(self):
-        gifs = Image.open(self.gif_path)
+        clip = VideoFileClip(self.gif_path, has_mask=True)
+        gif = Image.open(self.gif_path)
+        n_frames = gif.n_frames
         frames = []
-        for i in range(gifs.n_frames):
-            gifs.seek(i)
-            new = Image.new("RGBA", gifs.size)
-            new.paste(gifs)
-            img = np.array(new)
-            img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA)
-            frames.append(img)
+        for i, frame in enumerate(clip.iter_frames()):
+            if i<n_frames:
+                gif.seek(i)
+                duration = gif.info['duration']
+                cnt = duration//33
+                cnt = cnt if cnt >0 else 1
+            else:
+                cnt = 1
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR).astype(np.float32)
+            mask = (frame[:,:,0]+frame[:,:,1]+frame[:,:,2])/(255*3)
+            mask[mask<1] = 0
+            mask = 1-mask
+            mask = np.array([mask, mask, mask]).transpose(1,2,0)
+            frame = frame*mask
+            frame = frame.astype(np.uint8)
+            mask = mask[:,:,0]*255
+            mask = mask.astype(np.uint8).reshape(mask.shape+(1,))
+            frame = np.concatenate([frame, mask], axis=2)
+            for _ in range(cnt):
+                frames.append(frame)
         return frames
     
     def get_loop_image(self, shape=None):
@@ -51,6 +73,8 @@ class GIFPIC(object):
         else:
             frame = img
             gif_map = np.ones(frame.shape, dtype=np.float32)
+        # show(frame)
+        # show(gif_map)
         return frame, gif_map
     
     def draw_on_image(self, image, position, shape=None):
@@ -218,9 +242,8 @@ if __name__=='__main__':
         basic+'test3.png'
     ]
     lines = ['因为牛郎和织女一直处于分居状态', '牛郎和他的牛好上了', '所以七夕节不过了', '请大家相互转告', '如果还想过的话', '就请集齐七颗龙珠', '这样就可以召唤神龙了']
-    frames, _ = generate_gif_image_advertisement('tmp.mp4', lines, img_paths, basic+'xiuwu.gif')
+    frames, _ = generate_gif_image_advertisement('tmp.mp4', lines, img_paths, basic+'pig.gif')
     print('frame nums:', len(frames))
     for im in frames:
         cv2.imshow('', im)
         cv2.waitKey(int(1000/30))
-    cv2.waitKey(0)

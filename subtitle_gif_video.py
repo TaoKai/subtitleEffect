@@ -178,7 +178,7 @@ def generate_gif_video_advertisement(save_path, lines, video_path, gif_path):
 if __name__=='__main__':
     print('start animation.')
     lines = ['因为牛郎和织女一直处于分居状态', '牛郎和他的牛好上了', '所以七夕节不过了', '请大家相互转告', '如果还想过的话', '就请集齐七颗龙珠', '这样就可以召唤神龙了']
-    frames, frames_indices = generate_gif_video_advertisement('tmp.mp4', lines, 'scenery.mp4', 'xiuwu.gif')
+    frames, frames_indices = generate_gif_video_advertisement('tmp.mp4', lines, 'obama.mp4', 'fire.gif')
     for fi in frames_indices:
         print(fi)
     for fr in frames:

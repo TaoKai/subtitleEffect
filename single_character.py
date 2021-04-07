@@ -100,8 +100,8 @@ class ArrayMultiline(object):
         self.line_string = line_string
         self.ls_len = len(self.line_string)
         self.alpha = np.clip(alpha, 0, 1)
-        self.line1len = 6
-        self.line2len = 7
+        self.line1len = 5
+        self.line2len = 6
         self.lines = self.clip_lines()
         self.height = len(self.lines)*(self.font_size+self.margin*2)
         self.array_lines = []
@@ -135,6 +135,56 @@ class ArrayMultiline(object):
                 lines.append(c_str)
                 start_index += self.line2len
         return lines
+
+def show(img, wait=0):
+    print(img, img.shape)
+    cv2.imshow('', img)
+    cv2.waitKey(wait)
+
+class MultilineBlock(object):
+    def __init__(self, line_string, font_size, inner_color=(255,255,10), outter_color=(10,10,10), block_ratio=1.0):
+        self.array_multi = ArrayMultiline(line_string, font_size, inner_color, outter_color)
+        self.height = self.array_multi.height
+        self.width = self.get_array_width()
+        self.block_ratio = block_ratio
+    
+    def get_array_width(self):
+        nums = [len(l) for l in self.array_multi.lines]
+        max_cnt = max(nums)
+        return max_cnt*self.array_multi.font_size
+    
+    def get_block_and_map(self):
+        block = np.zeros([self.height, self.width, 3], dtype=np.uint8)
+        block = self.array_multi.draw_on_image(block, (self.width/2, self.height/2))
+        show_height = int(self.height*self.block_ratio)
+        block[show_height:, :, :] = 0
+        mask = np.where(block==0, np.zeros(block.shape), np.ones(block.shape))
+        return block, mask
+    
+    def draw_on_image(self, image, position):
+        img = image.copy()
+        line_img, line_map = self.get_block_and_map()
+        p = position
+        p0 = [int(p[0]-self.width/2.0), int(p[1]-self.height/2)]
+        p1 = [p0[0]+self.width, p0[1]+self.height]
+        img_p0 = [0,0]
+        img_p1 = [img.shape[1], img.shape[0]]
+        crop_p0 = [max(p0[0], img_p0[0]), max(p0[1], img_p0[1])]
+        crop_p1 = [min(p1[0], img_p1[0]), min(p1[1], img_p1[1])]
+        line_p0 = [crop_p0[0]-p0[0], crop_p0[1]-p0[1]]
+        line_p1 = [crop_p1[0]-p0[0], crop_p1[1]-p0[1]]
+        line_img = line_img[line_p0[1]:line_p1[1], line_p0[0]:line_p1[0], :]
+        line_map = line_map[line_p0[1]:line_p1[1], line_p0[0]:line_p1[0], :]
+        if line_img.shape[0]<=0 or line_img.shape[1]<=0:
+            return img
+        cut = img[crop_p0[1]:crop_p1[1], crop_p0[0]:crop_p1[0], :]
+        if cut.shape[0]<=0 or cut.shape[1]<=0:
+            return img
+        line_map = cv2.GaussianBlur(line_map, (5,5), 0)
+        blend = line_img*line_map+cut*(1-line_map)
+        blend = blend.astype(np.uint8)
+        img[crop_p0[1]:crop_p1[1], crop_p0[0]:crop_p1[0], :] = blend
+        return img
 
 def get_background(image):
     crop_size = (540, 960)
@@ -299,8 +349,11 @@ if __name__=='__main__':
     image = cv2.imread('test.png', cv2.IMREAD_COLOR)
     image = get_background(image)
     h, w, _ = image.shape
-    line_string = '因为牛郎和织女一直处于分居状态'
-    am = ArrayMultiline(line_string, 60, margin=5)
-    img = am.draw_on_image(image, (w/2, h/2+80))
-    cv2.imshow('', img)
+    line_string = '据统计平均每人一天能走五千步有的人将五千步换成了钱有的人却白白浪费'
+    leN = len(line_string)*2
+    for i in range(leN):
+        mb = MultilineBlock(line_string, 80, block_ratio=(i+1)/leN)
+        img = mb.draw_on_image(image, (w/2, h/2))
+        show(img, wait=30)
     cv2.waitKey(0)
+

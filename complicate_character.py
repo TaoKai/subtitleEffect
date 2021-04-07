@@ -151,7 +151,7 @@ if __name__=='__main__':
     hanzi = get_hanzi_string()
     img = cv2.imread('test.png', cv2.IMREAD_COLOR)
     h, w, _ = img.shape
-    sca = SingleCharacterAnim('宁怡群是一个乖宝宝', 100)
+    sca = SingleCharacterAnim('好好学习天天向上', 100)
     frames = sca.rain_move_character_in_image(img, (w/2,0), (w/2, 600), (0, 1), (10, 0))
     cv2.imshow('', img)
     cv2.waitKey(0)

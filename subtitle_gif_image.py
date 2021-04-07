@@ -4,7 +4,7 @@ from moviepy.editor import VideoFileClip
 from six import string_types, iteritems
 from PIL import Image, ImageDraw, ImageFont
 from single_character import SubAnimation, ArrayMultiline, saveVideo
-from module_logger import logger
+from logger import logger
 
 def get_background(image):
     crop_size = (540, 960)
@@ -242,7 +242,7 @@ if __name__=='__main__':
         basic+'test3.png'
     ]
     lines = ['因为牛郎和织女一直处于分居状态', '牛郎和他的牛好上了', '所以七夕节不过了', '请大家相互转告', '如果还想过的话', '就请集齐七颗龙珠', '这样就可以召唤神龙了']
-    frames, _ = generate_gif_image_advertisement('tmp.mp4', lines, img_paths, basic+'pig.gif')
+    frames, _ = generate_gif_image_advertisement('tmp.mp4', lines, img_paths, basic+'golu.gif')
     print('frame nums:', len(frames))
     for im in frames:
         cv2.imshow('', im)

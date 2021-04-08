@@ -111,7 +111,7 @@ class SingleCharacterAnim(object):
             start_ind = start_ind+self.rain_intv
         return rList
 
-    def rain_move_character_in_image(self, image, from_pos, to_pos, alpha_range, rot_range):
+    def rain_move_character_in_image(self, image, from_pos, to_pos, alpha_range, rot_range, is_fading=False):
         string_positions = self.get_string_positions(from_pos, to_pos)
         dr = (rot_range[1]-rot_range[0])/self.rain_single_anim_cnt
         dx = (to_pos[0]-from_pos[0])/self.rain_single_anim_cnt
@@ -124,11 +124,17 @@ class SingleCharacterAnim(object):
         for i in range(self.rain_total_cnt):
             frame_img = image
             for j, rl in enumerate(self.rain_list):
+                if is_fading:
+                    cc = ComplicateCharacter(self.ch_string[j], self.font_size, alpha=start_a[j], rot_angle=0)
+                    frame_img = cc.draw_at(frame_img, string_positions[j][0])
                 for k, sr in enumerate(rl):
                     if i in range(sr[0], sr[1]):
                         if i%2==0:
                             index[j] = random.randint(0, len(self.ch_string)-1)
-                        cc = ComplicateCharacter(self.ch_string[index[j]], self.font_size, alpha=start_a[j], rot_angle=start_xyr[j][k][2])
+                        if is_fading:
+                            cc = ComplicateCharacter(self.ch_string[index[j]], self.font_size, alpha=start_a[j]*0.6, rot_angle=start_xyr[j][k][2])
+                        else:
+                            cc = ComplicateCharacter(self.ch_string[index[j]], self.font_size, alpha=start_a[j], rot_angle=start_xyr[j][k][2])
                         frame_img = cc.draw_at(frame_img, (start_xyr[j][k][0], start_xyr[j][k][1]))
                         start_xyr[j][k][0] += dx
                         start_xyr[j][k][1] += dy
@@ -149,14 +155,16 @@ class SingleCharacterAnim(object):
 
 if __name__=='__main__':
     hanzi = get_hanzi_string()
-    img = cv2.imread('test.png', cv2.IMREAD_COLOR)
+    img = cv2.imread('mhr.jpg', cv2.IMREAD_COLOR)
     h, w, _ = img.shape
-    sca = SingleCharacterAnim('好好学习天天向上', 100)
-    frames = sca.rain_move_character_in_image(img, (w/2,0), (w/2, 600), (0, 1), (10, 0))
+    sca = SingleCharacterAnim('怪物猎人盾斧崛起', 120)
+    frames = sca.rain_move_character_in_image(img, (w/2,0), (w/2, h/2), (0, 1), (10, 0), is_fading=False)
+    for i in range(30):
+        frames.append(frames[-1])
+    frames += sca.rain_move_character_in_image(img, (w/2,h/2), (w/2, h+200), (1, 0), (0, 90), is_fading=True)
     cv2.imshow('', img)
     cv2.waitKey(0)
-    for f in frames:
-        cv2.imshow('', f)
-        cv2.waitKey(int(1000/30))
-    cv2.waitKey(0)
-    
+    while True:
+        for f in frames:
+            cv2.imshow('', f)
+            cv2.waitKey(int(1000/30))
